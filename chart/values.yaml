@@ -1,0 +1,23 @@
+image:
+  repository: registry.git.tony/gmatyushin/reloader
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: regcred
+nameOverride: ""
+fullnameOverride: ""
+
+resources:
+   limits:
+     cpu: 100m
+     memory: 128Mi
+   requests:
+     cpu: 100m
+     memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

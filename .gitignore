@@ -1,0 +1,5 @@
+.idea
+venv
+kubeconfig
+__pycache__
+.gitlab-ci.yml
