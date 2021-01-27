@@ -10,6 +10,7 @@ from logs import *
 
 account_dir = '/var/run/secrets/kubernetes.io/serviceaccount'
 api_server = os.getenv("api_server", "https://kubernetes.default.svc.cluster.local")
+forbidden_namespaces = os.getenv("forbidden_namespaces", "kube_system ingress_nginx").split()
 
 try:
     config.load_kube_config()                           # load local kubeconfig
@@ -29,6 +30,7 @@ namespace = 'default'
 
 
 def exec_command_in_pod(pod, container, command,  api_instance=v1, namespace=namespace, shell="/bin/sh"):
+    print(command)
     client = stream(api_instance.connect_get_namespaced_pod_exec,
                   pod.metadata.name,
                   namespace,
@@ -104,7 +106,7 @@ w = watch.Watch()
 for event in w.stream(v1.list_config_map_for_all_namespaces):
     try:
         namespace = event['object'].metadata.namespace
-        if event['type'] == 'MODIFIED':
+        if event['type'] == 'MODIFIED' and namespace not in forbidden_namespaces:
             logger.info(f"Event: {event['type']} {event['object'].metadata.name} in namespace {namespace}")
             pods_to_reload = find_pods_with_configmap(cm=event['object'], namespace=namespace)
             if pods_to_reload:
