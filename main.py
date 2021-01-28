@@ -30,7 +30,6 @@ namespace = 'default'
 
 
 def exec_command_in_pod(pod, container, command,  api_instance=v1, namespace=namespace, shell="/bin/sh"):
-    print(command)
     client = stream(api_instance.connect_get_namespaced_pod_exec,
                   pod.metadata.name,
                   namespace,
@@ -83,7 +82,7 @@ def touch_annotation(pod, api_instance=v1, namespace=namespace):
 
 def wait_and_reload(cm, pod, container, mountpath, namespace):
     while not comparemd5(cm, pod, container, mountpath, namespace):
-        logger.info(pod.metadata.name, 'waiting')
+        logger.info(f'{pod.metadata.name} waiting')
         time.sleep(2)
 
     if 'reloader.yarr/check' in pod.metadata.annotations:
