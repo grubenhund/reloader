@@ -10,7 +10,7 @@ from logs import *
 
 account_dir = '/var/run/secrets/kubernetes.io/serviceaccount'
 api_server = os.getenv("api_server", "https://kubernetes.default.svc.cluster.local")
-forbidden_namespaces = os.getenv("forbidden_namespaces", "kube_system ingress_nginx").split()
+forbidden_namespaces = os.getenv("forbidden_namespaces", "kube-system ingress-nginx").split()
 
 try:
     config.load_kube_config()                           # load local kubeconfig
@@ -55,7 +55,11 @@ def find_pods_with_configmap(cm, api_instance=v1, namespace=namespace):
                     for c in p.spec.containers:
                         for vm in c.volume_mounts:
                             if vm.name == v.name:
-                                res.append((p, c.name, vm.mount_path))
+                                if vm.sub_path is None and vm.sub_path_expr is None:
+                                    res.append((p, c.name, vm.mount_path))
+                                else:
+                                    logger.info(f"Configmap {c.name} can't be reloaded in pod {p.metadata.name}:"
+                                                f"mounted as subPath and won't be updated")
             except AttributeError as err:
                 pass
     return res  # pod, container name, mountpath
@@ -64,7 +68,8 @@ def find_pods_with_configmap(cm, api_instance=v1, namespace=namespace):
 def comparemd5(cm, pod, container, mountpath, namespace):
     cm_hashes = {file: hashlib.md5(cm.data[file].encode()).hexdigest() for file in cm.data}
     pod_hashes = {file: exec_command_in_pod(pod, container,
-                                            f'md5sum {mountpath}{file}', namespace=namespace)[1].split()[0] for file in cm_hashes}
+                                            f'md5sum {mountpath}{file}', namespace=namespace)[1].split()[0] for file in
+                  cm_hashes}
     logger.info(cm_hashes, pod_hashes)
     return cm_hashes == pod_hashes
 
